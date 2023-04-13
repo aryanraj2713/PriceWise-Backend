@@ -18,6 +18,6 @@ prediction = model.predict(x)
 
 
 if prediction < 0.5:
-    print("The car is not damaged")
-else:
     print("The car is damaged")
+else:
+    print("The car is  not damaged")
