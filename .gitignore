@@ -1,3 +1,8 @@
 .venv
 __pycache__
+<<<<<<< HEAD
 weights.h5
+/static
+=======
+weights.h5
+>>>>>>> 1755e86a6c1c637949ece9f6a0814f08dd6b0bc4

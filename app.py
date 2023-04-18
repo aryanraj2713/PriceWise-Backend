@@ -3,9 +3,12 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras.preprocessing import image
 from flask import Flask, jsonify, request
+from flask_cors import CORS, cross_origin
 from werkzeug.utils import secure_filename
+import datetime
 
 app = Flask(__name__)
+CORS(app, support_credentials=True)
 app.secret_key = "shit-secret-key"
 
 UPLOAD_FOLDER = 'static/uploads'
@@ -19,18 +22,24 @@ def allowed_file(filename):
 model = tf.keras.models.load_model("weights.h5")
 
 @app.route('/predict', methods=['POST'])
+@cross_origin(origin='*')
 def predict():
-    
-    if 'files[]' not in request.files:
+    if 'files' not in request.files:
         resp = jsonify({'message' : 'No file part in the request'})
         resp.status_code = 400
         return resp
  
-    files = request.files.getlist('files[]')
-     
-    errors = {}
-    results = []
-     
+    files = request.files.getlist('files')
+    manufacturing = int(request.form.get("manufacturing"))
+    showroomPrice = int(request.form.get("price"))
+    price = showroomPrice
+
+    today = datetime.date.today()
+    year = today.year
+    
+    for i in range(year-manufacturing+1):
+        price -= price*0.1
+    
     for file in files:      
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
@@ -41,15 +50,14 @@ def predict():
             x = np.expand_dims(x, axis=0)
             prediction = model.predict(x)
             if prediction < 0.5:
-                result = 'damaged'
-            else:
-                result = 'not damaged'
-            results.append(result)
+                price -= price*0.1
         else:
-            errors[file.filename] = 'File type is not allowed'
-            results.append(errors)
-    
-    return jsonify(results)
+            return jsonify("File type is not allowed"), 400
+
+    if(price < showroomPrice*0.1):
+        return jsonify(showroomPrice*0.1), 200
+
+    return jsonify(price), 200
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8880, debug=True)
+    app.run(debug=True)
